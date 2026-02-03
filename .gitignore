@@ -1,207 +1,159 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[codz]
-*$py.class
+#создай тут фоторедактор Easy Editor!
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QListWidget, QLabel, QHBoxLayout, QVBoxLayout, QFileDialog
+from PyQt5.QtGui import QPixmap
+from PIL import Image
+from PIL import ImageOps
+from PIL import ImageFilter
+import os
 
-# C extensions
-*.so
+app = QApplication([])
+win = QWidget()
+win.setWindowTitle('Easy Editor')
+win.resize(700, 400)
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+button_dir = QPushButton('Папка')
+list_dir = QListWidget()
+photo = QLabel('Картинка')
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+left = QPushButton('Лево')
+right = QPushButton('Право')
+mirror_button = QPushButton('Зеркало')
+rez = QPushButton('Резкость')
+bw = QPushButton('Ч/Б')
+save = QPushButton('Сохранить')
+sbros = QPushButton('Сбросить фильтры')
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+os_h = QHBoxLayout()
+row = QHBoxLayout()
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py.cover
-.hypothesis/
-.pytest_cache/
-cover/
+dir_vert = QVBoxLayout()
+button_vert = QVBoxLayout()
 
-# Translations
-*.mo
-*.pot
+row.addWidget(left)
+row.addWidget(right)
+row.addWidget(mirror_button)
+row.addWidget(rez)
+row.addWidget(bw)
+row.addWidget(save)
+row.addWidget(sbros)
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+dir_vert.addWidget(button_dir)
+dir_vert.addWidget(list_dir)
 
-# Flask stuff:
-instance/
-.webassets-cache
+button_vert.addWidget(photo)
+button_vert.addLayout(row)
 
-# Scrapy stuff:
-.scrapy
+os_h.addLayout(dir_vert)
+os_h.addLayout(button_vert)
 
-# Sphinx documentation
-docs/_build/
+win.setLayout(os_h)
 
-# PyBuilder
-.pybuilder/
-target/
+workdir = ''
 
-# Jupyter Notebook
-.ipynb_checkpoints
+def chooseWorkdir():
+    global workdir
+    workdir = QFileDialog.getExistingDirectory()
 
-# IPython
-profile_default/
-ipython_config.py
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+def filter(files, extension):
+    result = list()
+    for i in files:
+        if i.endswith(extension):
+            result.append(i)
+    return result
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+def showFilenamesList():
+    extension2 = ('png', 'jpg', 'gif', 'svg')
+    chooseWorkdir()
+    result = filter(os.listdir(workdir), extension2)
+    list_dir.clear()
+    for i in result:
+        list_dir.addItem(i)
 
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#uv.lock
+class ImageProcess():
+    def __init__(self):
+        self.image = None
+        self.filename = None
+        self.modified_dir = "Modified/"
+        self.dir = None
+        self.rezerve_image = None
+        
+    def LoadImage(self, filename, work):
+        self.filename = filename
+        self.dir = work
+        image_dir = os.path.join(self.dir, filename)
+        self.image = Image.open(image_dir)
+        self.rezerve_image = self.image
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-#poetry.toml
+    def showImage(self, image):
+        photo.hide()
+        pixmapImage = QPixmap(image)
+        w , h = photo.width(), photo.height()
+        pixmapImage = pixmapImage.scaled(w,h, Qt.KeepAspectRatio)
+        photo.setPixmap(pixmapImage)
+        photo.show()
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.
-#   https://pdm-project.org/en/latest/usage/project/#working-with-version-control
-#pdm.lock
-#pdm.toml
-.pdm-python
-.pdm-build/
+    def saveImage(self):
+        path = os.path.join(self.dir, self.modified_dir)
+        if not(os.path.exists(path) or os.path.isdir(path)):
+            os.mkdir(path)
+        image_path = os.path.join(path, self.filename)
+        self.image.save(image_path)
 
-# pixi
-#   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
-#pixi.lock
-#   Pixi creates a virtual environment in the .pixi directory, just like venv module creates one
-#   in the .venv directory. It is recommended not to include this directory in version control.
-.pixi
+    def do_bw(self):
+        self.image = self.image.convert('L')
+        self.saveImage()
+        image_path = os.path.join(self.dir, self.modified_dir ,self.filename)
+        self.showImage(image_path)
+    
+    def do_mirror(self):
+        self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
+        self.saveImage()
+        image_path = os.path.join(self.dir, self.modified_dir ,self.filename)
+        self.showImage(image_path)
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+    def do_Flip_left(self):
+        self.image = self.image.rotate(90)
+        self.saveImage()
+        image_path = os.path.join(self.dir, self.modified_dir ,self.filename)
+        self.showImage(image_path)
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+    def do_Flip_right(self):
+        self.image = self.image.rotate(-90)
+        self.saveImage()
+        image_path = os.path.join(self.dir, self.modified_dir ,self.filename)
+        self.showImage(image_path)
 
-# SageMath parsed files
-*.sage.py
+    def rezkos(self):
+        self.image = self.image.filter(ImageFilter.SHARPEN)
+        self.saveImage()
+        image_path = os.path.join(self.dir, self.modified_dir ,self.filename)
+        self.showImage(image_path)
 
-# Environments
-.env
-.envrc
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+    def reset(self):
+       self.image = self.rezerve_image
+       self.saveImage()
+       image_path = os.path.join(self.dir, self.modified_dir ,self.filename)
+       self.showImage(image_path)
+workimage = ImageProcess()
 
-# Spyder project settings
-.spyderproject
-.spyproject
+def showChoosenImage():
+    if list_dir.currentRow() >= 0:
+        filename = list_dir.currentItem().text()
+        workimage.LoadImage(filename, workdir)
+        image_path = os.path.join(workimage.dir, workimage.filename)
+        workimage.showImage(image_path)
 
-# Rope project settings
-.ropeproject
+list_dir.currentRowChanged.connect(showChoosenImage)
+button_dir.clicked.connect(showFilenamesList)
+bw.clicked.connect(workimage.do_bw)
+save.clicked.connect(workimage.saveImage)
+mirror_button.clicked.connect(workimage.do_mirror)
+left.clicked.connect(workimage.do_Flip_left)
+right.clicked.connect(workimage.do_Flip_right)
+rez.clicked.connect(workimage.rezkos)
+sbros.clicked.connect(workimage.reset)
 
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
-
-# Abstra
-# Abstra is an AI-powered process automation framework.
-# Ignore directories containing user credentials, local state, and settings.
-# Learn more at https://abstra.io/docs
-.abstra/
-
-# Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
-#  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
-#  you could uncomment the following to ignore the entire vscode folder
-# .vscode/
-
-# Ruff stuff:
-.ruff_cache/
-
-# PyPI configuration file
-.pypirc
-
-# Cursor
-#  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
-#  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
-#  refer to https://docs.cursor.com/context/ignore-files
-.cursorignore
-.cursorindexingignore
-
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
+win.show()
+app.exec_()
